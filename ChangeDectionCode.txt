@@ -1,0 +1,317 @@
+
+//////base year:2015   target year: 2020  ///////
+
+var roi = ee.FeatureCollection( table);
+
+function maskL8sr(image) {    
+  // Bits 3 and 5 are cloud shadow and cloud, respectively.
+  var cloudShadowBitMask = 1 << 3;
+  var cloudsBitMask = 1 << 5;
+
+  // Get the pixel QA band.
+  var qa = image.select('pixel_qa');
+
+  // Both flags should be set to zero, indicating clear conditions.
+  var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
+      .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
+
+  // Return the masked image, scaled to TOA reflectance, without the QA bands.
+  return image.updateMask(mask).divide(10000)
+      .select("B[0-9]*")
+      .copyProperties(image, ["system:time_start"]);
+}
+ 
+ var palette = ['000000', 'FFFFFF'];
+ var visParam = {
+    min: -1,
+    max: 1,
+    palette: [
+    'FFFFFF', 'CE7E45', 'DF923D', 'F1B555', 'FCD163', '99B718', '74A901',
+    '66A000', '529400', '3E8601', '207401', '056201', '004C00', '023B01',
+    '012E01', '011D01', '011301'
+    ],
+  };  
+var visRGB = {
+  bands: ['B5', 'B4', 'B3'],
+  min: 0,
+  max: 0.4,
+  gamma: 1.4,
+};
+
+Map.addLayer(elevation.clip(table), {palette: palette}, 'dem',0);
+
+var RGB_2015 =  ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+    .filterDate('2015-04-01', '2015-11-30')
+    .filterBounds( table) 
+    .map(maskL8sr)
+    .median();
+Map.addLayer(RGB_2015.clip( table), visRGB,'RGB_2015',0);
+
+var RGB_2020 =  ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+    .filterDate('2020-04-01', '2020-11-30')
+    .filterBounds( table) 
+    .map(maskL8sr)
+    .median();
+Map.addLayer(RGB_2020.clip( table), visRGB,'RGB_2020',0);
+
+
+var NDVI_2015 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR") 
+              .filterDate("2015-01-01", "2016-12-31")
+              .filterBounds(table) 
+              .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI_2015.clip(table), visParam, 'NDVI_2015',0);  
+
+var NDVI_2020 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR") 
+              .filterDate("2019-01-01", "2019-12-31")
+              .filterBounds(table) 
+              .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI_2020.clip(table), visParam, 'NDVI_2020',0); 
+
+
+var MNDWI_2015 = RGB_2015.normalizedDifference(["B3", "B6"]).rename("MNDWI_2015");
+Map.addLayer(MNDWI_2015.clip(table), visParam, 'MNDWI_2015',0);
+
+var MNDWI_2020 = RGB_2020.normalizedDifference(["B3", "B6"]).rename("MNDWI_2020");
+Map.addLayer(MNDWI_2020.clip(table), visParam, 'MNDWI_2020',0);
+
+var Light_2015 = ee.ImageCollection('NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG')
+.filterDate('2015-05-01', '2015-10-31')
+.filterBounds(table)
+.select('avg_rad')
+.median();
+Map.addLayer(Light_2015.clip(table), {}, 'Light_2015',0); 
+
+var Light_2020 = ee.ImageCollection('NOAA/VIIRS/DNB/MONTHLY_V1/VCMCFG')    //NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG
+.filterDate('2020-01-01', '2020-12-31')
+.filterBounds(table)
+.select('avg_rad')
+.median();
+Map.addLayer(Light_2020.clip(table), {}, 'Light_2020',0); 
+
+var SAR_2015 = ee.ImageCollection('COPERNICUS/S1_GRD')
+.filterBounds(table)
+.filterDate('2015-01-01', '2015-12-31');
+
+var SAR_VV_2015 = SAR_2015
+.filter(ee.Filter.eq('instrumentMode', 'IW'))
+.filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
+.select(['VV'])
+.mean();
+Map.addLayer(SAR_VV_2015.clip(table), {min:-25,max:0}, 'SAR_VV_2015',0);
+
+var SAR_VH_2015 = SAR_2015
+.filter(ee.Filter.eq('instrumentMode', 'IW'))
+.filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH'))
+.select(['VH'])
+.mean();
+Map.addLayer(SAR_VH_2015.clip(table), {min:-25,max:0}, 'SAR_VH_2015',0);
+
+var SAR_2020 = ee.ImageCollection('COPERNICUS/S1_GRD')
+.filterBounds(table)
+.filterDate('2020-01-01', '2020-12-31');
+
+var SAR_VV_2020 = SAR_2020
+.filter(ee.Filter.eq('instrumentMode', 'IW'))
+.filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
+.select(['VV'])
+.mean();
+Map.addLayer(SAR_VV_2020.clip(table), {min:-25,max:0}, 'SAR_VV_2020',0);
+
+var SAR_VH_2020 = SAR_2020
+.filter(ee.Filter.eq('instrumentMode', 'IW'))
+.filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH'))
+.select(['VH'])
+.mean();
+Map.addLayer(SAR_VH_2020.clip(table), {min:-25,max:0}, 'SAR_VH_2020',0);
+
+//NDVI Apr.
+var NDVI4_2015 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2015-03-01", "2015-04-30")
+              .filterBounds(table) 
+               .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI4_2015.clip(table), visParam, 'NDVI_4_2015',0);
+
+var NDVI4_2020 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2020-03-01", "2020-04-30")
+              .filterBounds(table) 
+               .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI4_2020.clip(table), visParam, 'NDVI_4_2020',0);
+
+//NDVI Oct.
+var NDVI10_2015 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2015-10-01", "2015-10-30")
+              .filterBounds(table) 
+               .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI10_2015.clip(table), visParam, 'NDVI_10_2015',0);
+
+var NDVI10_2020 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2020-10-01", "2020-10-30")
+              .filterBounds(table) 
+               .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI10_2020.clip(table), visParam, 'NDVI_10_2020',0);
+
+
+var water_2015 = MNDWI_2015.gt(0.05);
+Map.addLayer(water_2015.clip(table), {}, 'water_2015',0);
+
+var water_2020 = MNDWI_2020.gt(0.05);
+Map.addLayer(water_2020.clip(table), {}, 'water_2020',0);
+
+var jianshe_2015 = NDVI_2015.lt(0.5)
+                  .and(Light_2015.gt(0.6));
+Map.addLayer(jianshe_2015.clip(table), {}, 'jianshe_2015',0);
+
+var jianshe_2020 = NDVI_2020.lt(0.5)
+                  .and(Light_2020.gt(0.6));
+Map.addLayer(jianshe_2020.clip(table), {}, 'jianshe_2020',0);
+
+var veg_2015 = NDVI_2015.gt(0.2)
+              .and(water_2015.eq(0))
+              .and(jianshe_2015.eq(0));
+Map.addLayer(veg_2015.clip(table), {}, 'veg_2015',0);
+
+var veg_2020 = NDVI_2020.gt(0.2)
+              .and(water_2020.eq(0))
+              .and(jianshe_2020.eq(0));
+Map.addLayer(veg_2020.clip(table), {}, 'veg_2020',0);
+
+var forest_2015 = veg_2015.eq(1)
+                  .and(NDVI4_2015.gt(0.40));
+Map.addLayer(forest_2015.clip(table), {}, 'forest_2015',0);
+  
+var forest_2020 = veg_2020.eq(1)
+                  .and(NDVI4_2020.gt(0.40));
+Map.addLayer(forest_2020.clip(table), {}, 'forest_2020',0);
+  
+var crop_2015 = veg_2015.eq(1)
+                 .and(forest_2015.eq(0))
+                 .and(elevation.lt(3000))
+                 .and((NDVI10_2015.gt(0.40)).or((NDVI10_2015.lt(0.45)).and(NDVI_2015.gt(0.60))));
+Map.addLayer(crop_2015.clip(table), {}, 'crop_2015',0);
+var crop_2020 = veg_2020.eq(1)
+                 .and(forest_2020.eq(0))
+                 .and(elevation.lt(3000))
+                 .and((NDVI10_2020.gt(0.40)).or((NDVI10_2020.lt(0.45)).and(NDVI_2020.gt(0.60))));
+Map.addLayer(crop_2020.clip(table), {}, 'crop_2020',0);
+
+var luo_2015 = veg_2015.eq(0)
+               .and(water_2015.eq(0))
+               .and(jianshe_2015.eq(0));
+Map.addLayer(luo_2015.clip(table), {}, 'luo_2015',0);
+
+var luo_2020 = veg_2020.eq(0)
+               .and(water_2020.eq(0))
+               .and(jianshe_2020.eq(0));
+Map.addLayer(luo_2020.clip(table), {}, 'luo_2020',0);
+
+/////new water//////////
+var newwaterandsnow = water_2015.eq(0)
+                .and(water_2020.eq(1))
+                .and((MNDWI_2020.subtract(MNDWI_2015)).gt(0.1))
+                .and(NDVI_2020.lt(0.1));
+Map.addLayer(newwaterandsnow.clip(table), {}, 'newwaterandsnow',0);
+
+var RGB_b = RGB_2020.select(['B1']);
+
+var new_snow = newwaterandsnow.eq(1)
+                  .and(RGB_b.gt(0.1))
+                  .and(elevation.gt(3500));
+Map.addLayer(new_snow.clip(table), {}, 'new_snow',0);
+
+var new_water = newwaterandsnow.eq(1)
+                  .and(new_snow.eq(0));
+Map.addLayer(new_water.clip(table), {}, 'new_water',0);
+
+/////new jianshe//////////
+var new_jianshe = jianshe_2015.eq(0)
+                .and(jianshe_2020.eq(1))
+                .and((Light_2020.subtract(Light_2015)).gt(0.4))
+                .and(SAR_VV_2020.gt(-10))
+                .and(SAR_VH_2020.gt(-15))
+                .and(new_water.eq(0));
+Map.addLayer(new_jianshe.clip(table), {}, 'new_jianshe',0);
+
+/////new zhibei//////////
+var new_veg = veg_2015.eq(0)
+              .and(veg_2020.eq(1))
+              .and((NDVI_2020.subtract(NDVI_2015)).gt(0.2))
+              .and(new_jianshe.eq(0))
+              .and(new_water.eq(0));
+Map.addLayer(new_veg.clip(table), {}, 'new_veg',0);
+     ////////////new forest//////////
+var new_forest = new_veg.eq(1)
+                .and(forest_2020.eq(1))
+                .and(forest_2015.eq(0));
+Map.addLayer(new_forest.clip(table), {}, 'new_forest',0);
+     ////////////new crop//////////
+var new_crop = new_veg.eq(1)
+              .and(new_forest.eq(0))
+              .and(crop_2020.eq(1))
+              .and(crop_2015.eq(0));
+Map.addLayer(new_crop.clip(table), {}, 'new_crop',0);
+     ////////////new grass//////////
+var new_grass = new_veg.eq(1)
+              .and(new_forest.eq(0))
+              .and(new_crop.eq(0));
+Map.addLayer(new_grass.clip(table), {}, 'new_grass',0);
+
+/////new luo//////////
+var new_luo = luo_2015.eq(0)
+              .and(luo_2020.eq(1))
+              .and(NDVI_2020.lt(0.15))
+              .and(new_jianshe.eq(0))
+              .and(new_veg.eq(0))
+              .and(newwaterandsnow.eq(0));
+Map.addLayer(new_luo.clip(table), {}, 'new_luo',0);
+
+var save_path = 'QiLianShan2020';/////////////////////////////
+var QiLianShan03_2020 = new_crop.multiply(1) /////////////////////////////
+            .add(new_forest.multiply(2))
+            .add(new_grass.multiply(3))
+            .add(new_water.multiply(6))
+            .add(new_jianshe.multiply(7))
+            .add(new_luo.multiply(8))
+            .add(new_snow.multiply(9));
+
+Export.image.toDrive({
+  image: QiLianShan03_2020,   /////////////////////////////
+  description: 'QiLianShan03_2020',/////////////////////////////
+    scale: 30,
+    region:  table,
+    folder: save_path,
+    maxPixels:1e13
+  });
+
+
+var empty = ee.Image().toByte();
+var outline = empty.paint({
+  featureCollection: table,  
+  color:0, 
+  width:2  
+});
+Map.addLayer(outline, {palette: "ff0000"}, "outline");
+

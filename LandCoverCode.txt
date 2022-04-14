@@ -1,0 +1,375 @@
+//  cloud mask 
+function maskL8sr(image) {
+  // Bits 3 and 5 are cloud shadow and cloud, respectively.
+  var cloudShadowBitMask = (1 << 3);
+  var cloudsBitMask = (1 << 5);
+  // Get the pixel QA band.
+  var qa = image.select('pixel_qa');
+  // Both flags should be set to zero, indicating clear conditions.
+  var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
+                 .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
+  return image.updateMask(mask);
+}
+
+//
+function collection(primary,secondary) {
+  // Use an equals filter to define how the collections match.
+  var filter = ee.Filter.equals({
+           leftField: 'system:index',
+           rightField: 'system:index'
+});
+// Define the join.
+  var invertedJoin = ee.Join.inverted();
+  var invertedJoined = invertedJoin.apply(primary, secondary, filter);
+  var  dataset = ee.ImageCollection(invertedJoined);
+  return dataset;
+}
+
+ var palette = ['000000', 'FFFFFF'];
+ var visParam = {
+    min: -1,
+    max: 1,
+    palette: [
+    'FFFFFF', 'CE7E45', 'DF923D', 'F1B555', 'FCD163', '99B718', '74A901',
+    '66A000', '529400', '3E8601', '207401', '056201', '004C00', '023B01',
+    '012E01', '011D01', '011301'
+    ],
+  }; 
+
+
+var NDVI1 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2015-01-01", "2015-01-30")
+              .filterBounds(table) 
+              .map(function(image) { 
+                  return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+              .select("NDVI")
+              .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI1.clip(table), visParam, 'NDVI_1',0);
+
+
+//NDVI Feb.
+var NDVI2 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2015-02-01", "2015-02-28")
+              .filterBounds(table) 
+               .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI2.clip(table), visParam, 'NDVI_2',0);
+
+//NDVI Mar.
+var NDVI3 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2015-03-01", "2015-03-31")
+              .filterBounds(table) 
+               .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI3.clip(table), visParam, 'NDVI_3',0);
+
+//NDVI Apr.
+var NDVI4 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2015-03-01", "2015-04-30")
+              .filterBounds(table) 
+               .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI4.clip(table), visParam, 'NDVI_4',0);
+
+//NDVI May.
+var NDVI5_1 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+          .filterBounds(table)
+          .filterDate("2015-05-01", "2015-05-31");
+
+var NDVI5_2 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+          .filterBounds(table)
+          .filterDate("2015-06-01", "2015-04-30")
+        
+var NDVI5 = collection(NDVI5_1,NDVI5_2) 
+          .map(function(image) { 
+            return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+          .select("NDVI")
+          .reduce(ee.Reducer.max());
+Map.addLayer(NDVI5.clip(table), visParam, 'NDVI_5',0);
+
+//NDVI Jun.
+var NDVI6_1 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+          .filterBounds(table)
+          .filterDate("2015-06-01", "2015-06-30")
+
+var NDVI6_2 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+          .filterBounds(table)
+          .filterDate("2015-07-01", "2015-05-31")
+       
+var NDVI6 = collection(NDVI6_1,NDVI6_2) //调用collection函数，确定数据类型和时间范围
+          .map(function(image) { 
+            return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+          .select("NDVI")
+          .reduce(ee.Reducer.max());
+Map.addLayer(NDVI6.clip(table), visParam, 'NDVI_6',0);
+
+//NDVI Jul.
+var NDVI7 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2015-07-01", "2015-07-31")
+              .filterBounds(table) 
+               .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI7.clip(table), visParam, 'NDVI_7',0);
+
+//NDVI Aug.
+var NDVI8 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2015-08-01", "2015-08-31")
+              .filterBounds(table) 
+               .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI8.clip(table), visParam, 'NDVI_8',0);
+
+//NDVI sep.
+var NDVI9 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2015-09-01", "2015-09-30")
+              .filterBounds(table) 
+               .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI9.clip(table), visParam, 'NDVI_9',0);
+
+//NDVI Oct.
+var NDVI10 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2015-10-01", "2015-10-31")
+              .filterBounds(table) 
+               .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI10.clip(table), visParam, 'NDVI_10',0);
+
+//NDVI Nov.
+var NDVI11 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2015-11-01", "2015-11-30")
+              .filterBounds(table) 
+               .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI11.clip(table), visParam, 'NDVI_11',0);
+
+//NDVI Dec.
+var NDVI12 = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+              .filterDate("2015-12-01", "2015-12-31")
+              .filterBounds(table) 
+               .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print);
+Map.addLayer(NDVI12.clip(table), visParam, 'NDVI_12',0);
+
+// RGB
+var RGB_sum =  ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+    .filterDate('2015-05-01', '2015-10-30')
+    .filterBounds(table) 
+    .map(maskL8sr)
+    .median();
+Map.addLayer(RGB_sum.clip(table), {bands: ['B5', 'B4', 'B3'], min: 0, max: 4000},'RGB_sum',0);
+
+var RGB_spr =  ee.ImageCollection("LANDSAT/LC08/C01/T1_SR")
+    .filterDate('2015-04-01', '2015-05-30')
+    .filterBounds(table) 
+    .map(maskL8sr)
+    .median();
+Map.addLayer(RGB_spr.clip(table), {bands: ['B5', 'B4', 'B3'], min: 0, max: 4000},'RGB_spr',0);
+
+//NDVI max
+var NDVI_max = ee.ImageCollection("LANDSAT/LC08/C01/T1_SR") 
+              .filterDate("2015-01-01", "2015-12-31")
+              .filterBounds(table) 
+              .map(function(image) { 
+                   return image.addBands(image.normalizedDifference(["B5", "B4"]).rename("NDVI"));              }) 
+               .select("NDVI")
+               .reduce(ee.Reducer.max())
+              .aside(print); 
+Map.addLayer(NDVI_max.clip(table), visParam, 'NDVI_max',0);
+
+//------------------------------MNDWI------------------------------------------------------------------
+var MNDWI_sum = RGB_sum.normalizedDifference(["B3", "B6"]).rename("MNDWI_sum");
+Map.addLayer(MNDWI_sum.clip(table), visParam, 'MNDWI_sum',0);
+var MNDWI_spr = RGB_spr.normalizedDifference(["B3", "B6"]).rename("MNDWI_spr");
+Map.addLayer(MNDWI_spr.clip(table), visParam, 'MNDWI_spr',0);
+//dem
+Map.addLayer(elevation.clip(table), {palette: palette}, 'dem',0);
+
+//slope
+var slope = ee.Terrain.slope(elevation).aside(print)
+Map.addLayer(slope.clip(table), {palette: palette}, 'slope',0);
+
+
+//hsv
+var hsv = RGB_sum.select(['B4', 'B3', 'B2']).rgbToHsv(); //RGB空间到HSV亮度空间
+var value = hsv.select('value');
+Map.addLayer(value.clip(table), {min: 1, max: 7, palette: palette}, 'value',0);
+var color=hsv.select('saturation').divide(hsv.select('value'));
+Map.addLayer(color.clip(table), {min: 1, max: 7, palette: palette}, 'color',0);
+
+var band2 = RGB_sum.select([ 'B3']);
+Map.addLayer(band2.clip(table), {palette: palette}, 'band2',0);
+
+//water
+var waterandsnow = MNDWI_sum.gt(0.2)
+                  .and(band2.lt(4000))
+Map.addLayer(waterandsnow.clip(table), {min: 0, max: 1, palette: palette}, 'waterandsnow',0);
+
+//snow
+var RGB_b = RGB_sum.select(['B2'])
+var snow = waterandsnow.eq(1)
+           .and(RGB_b.gt(0.1))
+           .and(elevation.gt(2000));
+Map.addLayer(snow.clip(table), {min: 0, max: 1, palette: palette}, 'snow',0);
+
+var water = waterandsnow.eq(1)
+           .and(snow.eq(0));
+Map.addLayer(water.clip(table), {min: 0, max: 1, palette: palette}, 'water',0);
+
+
+var SAR = ee.ImageCollection('COPERNICUS/S1_GRD')
+.filterBounds(table)
+.filterDate('2015-01-01', '2015-12-31');
+
+var SAR_VV = SAR
+.filter(ee.Filter.eq('instrumentMode', 'IW'))
+.filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
+.select(['VV'])
+.mean();
+Map.addLayer(SAR_VV.clip(table), {min:-25,max:0}, 'SAR_VV',0);
+
+var SAR_VH = SAR
+.filter(ee.Filter.eq('instrumentMode', 'IW'))
+.filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH'))
+.select(['VH'])
+.mean();
+Map.addLayer(SAR_VH.clip(table), {min:-25,max:0}, 'SAR_VH',0);
+
+var slope = ee.Terrain.slope(elevation);
+
+var NightTime = ee.ImageCollection('NOAA/VIIRS/DNB/MONTHLY_V1/VCMSLCFG')
+.filterDate('2015-01-01', '2015-09-30')
+.filterBounds(table)
+.select('avg_rad')
+.median();
+Map.addLayer(NightTime.clip(table), {}, 'nighttime',0);
+
+
+var buildingland1 = (NDVI_max.lt(0.35))
+                  .and(slope.lt(3))
+                  .and(NightTime.gt(0.5))
+                  .and(SAR_VV.gt(-10))
+                  .and(SAR_VH.gt(-15))
+                  .and(waterandsnow.eq(0));
+Map.addLayer(buildingland1.clip(table), {min: 0, max: 1, palette: palette}, 'buildingland1', 0);
+
+var buildingland2 = NDVI_max.gt(0.2)
+                    .and(NightTime.gt(0.3))
+                    .and(SAR_VV.gt(-12))
+                    .and(SAR_VH.gt(-22))
+                    .and(NDVI_max.lt(0.5));
+Map.addLayer(buildingland2.clip(table), {min: 0, max: 1, palette: palette}, 'buildingland2',0);
+
+var buildingland = buildingland1.eq(1)
+                   .or(buildingland2.eq(1));
+Map.addLayer(buildingland.clip(table), {min: 0, max: 1, palette: palette}, 'buildingland', 0);
+
+
+//Veg. and NoVeg.
+var vegetation = NDVI_max.gt(0.2)
+                .and(waterandsnow.eq(0))
+                .and(buildingland.eq(0));
+Map.addLayer(vegetation.clip(table), {min: 0, max: 1, palette: palette}, 'vegetation',0);
+
+//forestland
+var forestland = vegetation.eq(1)
+                .and(NDVI4.gt(0.40));
+Map.addLayer(forestland.clip(table), {min: 0, max: 1, palette: palette}, 'forestland',0);
+
+var veg_temp1=(vegetation.eq(1))
+              .and(forestland.eq(0));
+              
+//cropland
+var cropland1 = veg_temp1.eq(1)
+              .and(NDVI10.gt(0.40))
+              .and(elevation.lt(2900));
+var cropland2 = veg_temp1.eq(1)
+              .and(NDVI_max.gt(0.6))
+              .and(elevation.lt(2900))
+              .and(NDVI10.lt(0.45))
+              .and(NDVI9.gt(0.60));
+var NDVI_sum = NDVI6.add(NDVI7).add(NDVI8)
+Map.addLayer(NDVI_sum.clip(table), {min: 0, max: 4, palette: palette}, 'NDVI_sum',0);
+var cropland3 = veg_temp1.eq(1)
+              .and(NDVI7.gt(0.8))
+              .and(elevation.lt(2900));
+Map.addLayer(cropland3.clip(table), {min: 0, max: 1, palette: palette}, 'cropland3',0);
+var cropland = (cropland1.eq(1)
+              .or(cropland2.eq(1))
+              .or(cropland3.eq(1)))
+              .and(slope.lt(10));
+Map.addLayer(cropland.clip(table), {min: 0, max: 1, palette: palette}, 'cropland',0);
+
+//grassland
+var greenland = veg_temp1.eq(1)
+               .and(cropland.eq(0));
+Map.addLayer(greenland.clip(table), {min: 0, max: 1, palette: palette}, 'greenland',0);
+
+////////////////////////////
+var non_vegetation = vegetation.eq(0)
+                     .and(waterandsnow.eq(0))
+                     .and(buildingland.eq(0));
+Map.addLayer(non_vegetation.clip(table), {min: 0, max: 1, palette: palette}, 'non_vegetation',0);
+
+//barenland
+var barenland= non_vegetation.eq(1)
+Map.addLayer(barenland.clip(table), {}, 'barenland',0);  
+
+var class_03 = cropland.multiply(1)
+            .add(forestland.multiply(2))
+            .add(greenland.multiply(3))
+            .add(water.multiply(6))
+            .add(buildingland.multiply(7))
+            .add(barenland.multiply(8))
+            .add(snow.multiply(9))
+            .clip(table);
+Map.addLayer(class_03.clip(table), {}, 'class_03',0);
+
+var save_path = 'QiLianShan2015_new2';
+
+Export.image.toDrive({
+  image:class_03,
+  description: 'class_03',
+    scale: 30,
+    region: table,
+    folder: save_path,
+    maxPixels:1e13
+  });
+
+
+//Range
+var empty = ee.Image().toByte();
+var outline = empty.paint({
+  featureCollection:table, 
+  color:0, 
+  width:2 
+});
+Map.addLayer(outline, {palette: "ff0000"}, "outline");
